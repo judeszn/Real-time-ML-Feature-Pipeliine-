@@ -50,6 +50,8 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-changeme}
     volumes:
       - grafana-storage:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/provisioning/dashboards:/var/lib/grafana/dashboards:ro
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
