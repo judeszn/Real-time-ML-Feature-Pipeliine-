@@ -1,0 +1,35 @@
+.DS_Store
+
+# Build artifacts
+**/main
+**/bin/
+*.out
+*.log
+*.tmp
+
+# Service binaries
+/ingestion-service/ingestion-service
+/ingestion-service/*.out
+/ingestion-service/*.log
+/ingestion-service/bin/
+
+# Go build files
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# Vendor (optional)
+/vendor/
+
+# Editor directories
+.vscode/
+.idea/
+
+# Mac and Misc
+Thumbs.db

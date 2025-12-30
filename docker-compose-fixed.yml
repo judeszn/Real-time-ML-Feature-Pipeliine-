@@ -1,10 +1,9 @@
 services:
-  # Core Services
   zookeeper:
     image: zookeeper:3.8
     ports:
       - "2181:2181"
-  
+
   kafka:
     image: confluentinc/cp-kafka:7.4.0
     depends_on:
@@ -16,41 +15,56 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-  
+
   postgres:
     image: postgres:15-alpine
+    env_file: .env
     environment:
-      POSTGRES_DB: featurestore
-      POSTGRES_USER: admin
+      POSTGRES_DB: ${POSTGRES_DB:-featurestore}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
       - "5432:5432"
-  
+
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-  
-  # Monitoring
+
   prometheus:
     image: prom/prometheus:latest
     ports:
       - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-  
+
   grafana:
     image: grafana/grafana:latest
     ports:
       - "3000:3000"
+    env_file: .env
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-  
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-changeme}
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     ports:
       - "8080:8080"
     environment:
-      - KAFKA_CLUSTERS_0_NAME=local
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+
+  ingestion:
+    build: ./ingestion-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BROKERS: kafka:9092
+
+volumes:
+  grafana-storage:
