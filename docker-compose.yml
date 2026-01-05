@@ -68,8 +68,57 @@ services:
       - "8081:8081"
     depends_on:
       - kafka
+      - redis
     environment:
       KAFKA_BROKERS: kafka:9092
+      REDIS_ADDR: redis:6379
+
+  feature-processor:
+    build: ./feature-processor
+    depends_on:
+      - kafka
+      - redis
+      - postgres
+    environment:
+      KAFKA_BROKERS: kafka:9092
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: featurestore
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      CONSUMER_GROUP: feature-computation-group
+      BATCH_SIZE: ${BATCH_SIZE:-100}
+      BATCH_TIMEOUT: ${BATCH_TIMEOUT:-1.0}
+    ports:
+      - "8082:8082"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8082/metrics')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  feature-api:
+    build:
+      context: ./feature-processor
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    depends_on:
+      - redis
+      - postgres
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: featurestore
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    command: python -u api.py
 
 volumes:
   grafana-storage:

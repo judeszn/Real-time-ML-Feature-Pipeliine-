@@ -1,35 +1,73 @@
-.DS_Store
+# Documentation (keep only README.md)
+*.md
+!README.md
 
-# Build artifacts
-**/main
-**/bin/
-*.out
-*.log
-*.tmp
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Service binaries
-/ingestion-service/ingestion-service
-/ingestion-service/*.out
-/ingestion-service/*.log
-/ingestion-service/bin/
-
-# Go build files
+# Go
 *.exe
 *.dll
 *.so
 *.dylib
+*.test
+*.out
+vendor/
+**/main
+**/bin/
 
-# Local environment files
+# Service binaries
+/ingestion-service/ingestion-service
+/ingestion-service/*.log
+/ingestion-service/bin/
+
+# Docker
+.dockerignore
+
+# Environment
 .env
 .env.local
 .env.*.local
+*.log
+*.tmp
 
-# Vendor (optional)
-/vendor/
+# Backup files
+*.backup
+*_OLD.*
+*.bak
 
-# Editor directories
+# IDEs
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
 # Mac and Misc
+.DS_Store
 Thumbs.db

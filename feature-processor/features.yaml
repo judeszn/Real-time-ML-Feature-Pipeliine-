@@ -1,0 +1,189 @@
+# Feature Registry Configuration
+# Defines all features computed by the feature processor
+
+version: "2.0"
+feature_version: "v2"
+
+# Feature definitions
+features:
+  # Aggregation Features - Time-windowed counts and sums
+  aggregation:
+    - name: activity_count_1h
+      entity: user
+      dtype: numerical
+      window_seconds: 3600
+      aggregation: count
+      description: "Count of user activities in the last hour"
+      version: v1
+      
+    - name: activity_count_6h
+      entity: user
+      dtype: numerical
+      window_seconds: 21600
+      aggregation: count
+      description: "Count of user activities in the last 6 hours"
+      version: v2
+      
+    - name: activity_count_24h
+      entity: user
+      dtype: numerical
+      window_seconds: 86400
+      aggregation: count
+      description: "Count of user activities in the last 24 hours"
+      version: v2
+      
+    - name: activity_count_7d
+      entity: user
+      dtype: numerical
+      window_seconds: 604800
+      aggregation: count
+      description: "Count of user activities in the last 7 days"
+      version: v2
+      
+    - name: event_type_frequency_24h
+      entity: user
+      dtype: numerical
+      window_seconds: 86400
+      aggregation: count
+      description: "Frequency of specific event type in last 24 hours"
+      version: v1
+      
+  # Temporal Features - Time-based features
+  temporal:
+    - name: seconds_since_last_event
+      entity: user
+      dtype: numerical
+      description: "Time in seconds since user's last event"
+      version: v1
+      
+    - name: hour_of_day
+      entity: event
+      dtype: categorical
+      description: "Hour of day when event occurred (0-23)"
+      version: v2
+      
+    - name: day_of_week
+      entity: event
+      dtype: categorical
+      description: "Day of week when event occurred (0-6)"
+      version: v2
+      
+    - name: is_weekend
+      entity: event
+      dtype: boolean
+      description: "Whether event occurred on weekend"
+      version: v2
+      
+  # Boolean Features - Binary indicators
+  boolean:
+    - name: is_active_session
+      entity: user
+      dtype: boolean
+      threshold_seconds: 1800
+      description: "Whether user has active session (activity within 30 min)"
+      version: v1
+      
+    - name: is_new_user
+      entity: user
+      dtype: boolean
+      threshold_hours: 24
+      description: "Whether user is new (first event within 24h)"
+      version: v2
+      
+  # Categorical Features - One-hot encoded
+  categorical:
+    - name: event_type_encoded
+      entity: event
+      dtype: categorical
+      categories: [login, logout, purchase, view, click, search]
+      encoding: one_hot
+      description: "One-hot encoded event type"
+      version: v2
+      
+    - name: device_type_encoded
+      entity: event
+      dtype: categorical
+      categories: [mobile, desktop, tablet]
+      encoding: one_hot
+      description: "One-hot encoded device type"
+      version: v2
+      
+  # Ratio Features - Derived metrics
+  ratio:
+    - name: purchase_rate_24h
+      entity: user
+      dtype: numerical
+      numerator: purchase_count_24h
+      denominator: view_count_24h
+      description: "Ratio of purchases to views in last 24h"
+      version: v2
+      
+    - name: activity_trend
+      entity: user
+      dtype: numerical
+      numerator: activity_count_1h
+      denominator: activity_count_24h
+      description: "Recent activity trend (1h/24h ratio)"
+      version: v2
+      
+  # Composite Features - Multi-factor scores
+  composite:
+    - name: engagement_score
+      entity: user
+      dtype: numerical
+      range: [0, 100]
+      dependencies: 
+        - activity_count_1h
+        - is_active_session
+        - event_type_frequency_24h
+      description: "Overall user engagement score"
+      version: v1
+      
+    - name: engagement_score_v2
+      entity: user
+      dtype: numerical
+      range: [0, 100]
+      dependencies:
+        - activity_count_1h
+        - activity_count_24h
+        - is_active_session
+        - purchase_rate_24h
+        - activity_trend
+      description: "Enhanced engagement score with more factors"
+      version: v2
+
+# Cache configuration
+cache:
+  default_ttl_seconds: 300
+  feature_ttls:
+    activity_count_1h: 3600
+    activity_count_6h: 7200
+    activity_count_24h: 14400
+    engagement_score: 300
+    engagement_score_v2: 300
+
+# A/B Testing variants
+ab_testing:
+  enabled: true
+  variants:
+    - name: control
+      id: A
+      features_version: v1
+      traffic_percentage: 50
+      
+    - name: enhanced
+      id: B
+      features_version: v2
+      traffic_percentage: 50
+
+# Drift detection thresholds
+drift_detection:
+  enabled: true
+  check_interval_seconds: 60
+  thresholds:
+    engagement_score:
+      mean_shift: 10.0
+      std_shift: 5.0
+    activity_count_1h:
+      mean_shift: 5.0
+      std_shift: 3.0
