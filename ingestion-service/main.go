@@ -36,13 +36,17 @@ func init() {
 	})
 
 	// Initialize optimized Kafka writer (reusable connection)
+	kafkaBrokers := os.Getenv("KAFKA_BROKERS")
+	if kafkaBrokers == "" {
+		kafkaBrokers = "kafka:9092"
+	}
 	kafkaWriter = &kafka.Writer{
-		Addr:         kafka.TCP("kafka:9092"),
+		Addr:         kafka.TCP(kafkaBrokers),
 		Topic:        "raw-events",
 		Balancer:     &kafka.LeastBytes{},
 		BatchSize:    100,                   // Batch up to 100 messages
 		BatchTimeout: 10 * time.Millisecond, // Wait max 10ms for batching
-		Compression:  kafka.Snappy,          // Enable compression
+		Compression:  kafka.Gzip,            // Use gzip compression
 		Async:        false,                 // Synchronous for reliability
 		RequiredAcks: kafka.RequireOne,      // Wait for leader acknowledgment
 	}

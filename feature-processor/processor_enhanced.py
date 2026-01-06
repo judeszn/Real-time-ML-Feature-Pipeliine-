@@ -259,7 +259,7 @@ class EnhancedFeatureProcessor:
             self.producer = KafkaProducer(
                 bootstrap_servers=self.kafka_brokers,
                 acks=1,
-                compression_type='snappy',
+                compression_type='gzip',  # Use gzip instead of snappy (no gcc needed)
                 linger_ms=10,
                 batch_size=16384,
                 value_serializer=lambda v: json.dumps(v).encode('utf-8')

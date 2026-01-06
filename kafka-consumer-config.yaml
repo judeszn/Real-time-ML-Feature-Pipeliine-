@@ -1,0 +1,59 @@
+# Optimized Kafka Consumer Configuration for Feature Pipeline
+# Use these settings when creating consumers in Python or Go services
+
+consumer_config:
+  # Group management
+  group_id: "feature-computation-group"
+  auto_offset_reset: "earliest"  # Start from beginning if no offset exists
+  enable_auto_commit: true
+  auto_commit_interval_ms: 5000  # Commit offsets every 5 seconds
+  
+  # Fetch optimization
+  fetch_min_bytes: 1024           # Wait for at least 1KB of data
+  fetch_max_wait_ms: 500          # But don't wait more than 500ms
+  max_partition_fetch_bytes: 1048576  # 1MB per partition
+  
+  # Session management
+  session_timeout_ms: 30000       # 30 seconds before consumer is considered dead
+  heartbeat_interval_ms: 3000     # Send heartbeat every 3 seconds
+  
+  # Processing optimization
+  max_poll_records: 500           # Process up to 500 records per poll
+  max_poll_interval_ms: 300000    # 5 minutes max between polls
+  
+  # Performance tuning
+  receive_buffer_bytes: 65536     # 64KB receive buffer
+  send_buffer_bytes: 131072       # 128KB send buffer
+  
+  # Reliability
+  isolation_level: "read_committed"  # Only read committed messages
+
+# Topic-specific configurations
+topics:
+  raw-events:
+    partitions: 3
+    replication_factor: 1
+    retention_ms: 604800000  # 7 days
+    compression_type: "snappy"
+    
+  feature-events:
+    partitions: 3
+    replication_factor: 1
+    retention_ms: 2592000000  # 30 days
+    compression_type: "snappy"
+    
+  processed-events:
+    partitions: 3
+    replication_factor: 1
+    retention_ms: 604800000  # 7 days
+    compression_type: "snappy"
+
+# Producer optimization (for services that both consume and produce)
+producer_config:
+  acks: 1                    # Leader acknowledgment
+  retries: 3                 # Retry failed sends
+  max_in_flight_requests_per_connection: 5
+  compression_type: "snappy"
+  linger_ms: 10             # Wait 10ms for batching
+  batch_size: 16384         # 16KB batches
+  buffer_memory: 33554432   # 32MB total buffer
