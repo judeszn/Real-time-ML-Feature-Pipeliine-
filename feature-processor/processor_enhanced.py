@@ -493,7 +493,8 @@ class EnhancedFeatureProcessor:
             
             # Session indicator
             if self.registry.should_compute_feature('is_active_session', variant):
-                features['is_active_session'] = features.get('seconds_since_last_event', 1800) < 1800
+                seconds = features.get('seconds_since_last_event')
+                features['is_active_session'] = (seconds is not None) and (seconds < 1800)
             
             # New user indicator
             if self.registry.should_compute_feature('is_new_user', variant):
@@ -567,6 +568,10 @@ class EnhancedFeatureProcessor:
                 # Skip None values
                 if value is None:
                     continue
+
+                # Normalize booleans to integers for numeric column
+                if isinstance(value, bool):
+                    value = int(value)
                 
                 feature_inserts.append((
                     features['user_id'],

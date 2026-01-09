@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-simulator
+  namespace: ml-pipeline
+  labels:
+    app: event-simulator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: event-simulator
+  template:
+    metadata:
+      labels:
+        app: event-simulator
+    spec:
+      containers:
+      - name: simulator
+        image: ml-pipeline/event-simulator:latest
+        imagePullPolicy: IfNotPresent
+        args:
+          - "--url"
+          - "http://ingestion-service:8081/events"
+          - "--users"
+          - "10"
+          - "--events-per-minute"
+          - "30"
+        env:
+        - name: LOG_LEVEL
+          value: "INFO"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "ps aux | grep main.py | grep -v grep"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+      restartPolicy: Always

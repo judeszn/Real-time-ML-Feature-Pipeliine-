@@ -14,8 +14,11 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
 
   postgres:
     image: postgres:15-alpine
@@ -25,7 +28,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
-      - "5432:5432"
+      - "5434:5432"
 
   redis:
     image: redis:7-alpine
@@ -43,7 +46,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3000:3000"
+      - "3030:3000"
     env_file: .env
     environment:
       GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
@@ -59,18 +62,18 @@ services:
       - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
 
   # Application Services
   ingestion:
     build: ./ingestion-service
     ports:
-      - "8081:8081"
+      - "8085:8081"
     depends_on:
       - kafka
       - redis
     environment:
-      KAFKA_BROKERS: kafka:9092
+      KAFKA_BROKERS: kafka:29092
       REDIS_ADDR: redis:6379
 
   feature-processor:
@@ -80,7 +83,7 @@ services:
       - redis
       - postgres
     environment:
-      KAFKA_BROKERS: kafka:9092
+      KAFKA_BROKERS: kafka:29092
       REDIS_HOST: redis
       REDIS_PORT: 6379
       POSTGRES_HOST: postgres
@@ -88,11 +91,11 @@ services:
       POSTGRES_DB: featurestore
       POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-      CONSUMER_GROUP: feature-computation-group
+      CONSUMER_GROUP: feature-computation-group-v2
       BATCH_SIZE: ${BATCH_SIZE:-100}
       BATCH_TIMEOUT: ${BATCH_TIMEOUT:-1.0}
     ports:
-      - "8082:8082"
+      - "8086:8082"
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8082/metrics')" ]
@@ -106,7 +109,7 @@ services:
       context: ./feature-processor
       dockerfile: Dockerfile
     ports:
-      - "8083:8083"
+      - "8084:8083"
     depends_on:
       - redis
       - postgres
@@ -119,6 +122,16 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     command: python -u api.py
+
+  event-simulator:
+    build:
+      context: ./event-simulator
+      dockerfile: Dockerfile
+    depends_on:
+      - ingestion
+    environment:
+      PYTHONUNBUFFERED: "1"
+    command: python main.py --url http://ingestion:8081/events --users 5 --events-per-minute 10
 
 volumes:
   grafana-storage:

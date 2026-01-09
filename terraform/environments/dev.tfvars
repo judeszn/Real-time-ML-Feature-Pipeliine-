@@ -9,7 +9,7 @@ public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
 private_subnet_cidrs = ["10.0.101.0/24", "10.0.102.0/24"]
 
 # EKS - Smaller for dev
-eks_cluster_version = "1.28"
+eks_cluster_version = "1.31"
 eks_node_groups = {
   general = {
     desired_size   = 2

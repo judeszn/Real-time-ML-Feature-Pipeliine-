@@ -1,39 +1,28 @@
 #!/bin/bash
-# Wait for Docker build to complete and start services
+set -euo pipefail
 
-echo "Waiting for Docker build to complete..."
-echo "This may take 3-5 minutes..."
+echo "Building images (one pass)..."
+docker compose build --parallel
 
-# Poll for build completion
-while docker-compose build 2>&1 | grep -q "Building\|RUN"; do
-    echo "Still building... ($(date +%H:%M:%S))"
-    sleep 10
-done
-
-echo "Build complete!"
-
-# Start services
 echo "Starting services..."
-docker-compose up -d
+docker compose up -d
 
-# Wait for services to be ready
 echo "Waiting 30 seconds for services to initialize..."
 sleep 30
 
-# Check status
-echo ""
 echo "Service Status:"
-docker-compose ps
+docker compose ps
 
 echo ""
-echo "✅ Services starting up!"
-echo ""
-echo "Access Points:"
-echo "  • Ingestion API: http://localhost:8081"
-echo "  • Feature API:   http://localhost:8083"
+echo "✅ Services started. Access Points:"
+echo "  • Ingestion API: http://localhost:8085"
+echo "  • Feature API:   http://localhost:8084"
+echo "  • Feature metrics: http://localhost:8086/metrics"
 echo "  • Kafka UI:      http://localhost:8080"
-echo "  • Grafana:       http://localhost:3000"
+echo "  • Grafana:       http://localhost:3030"
 echo "  • Prometheus:    http://localhost:9090"
+echo "  • Postgres:      localhost:5434 (inside: postgres:5432)"
+echo "  • Kafka broker:  kafka:29092 (inside), localhost:9092 (host)"
 echo ""
 echo "Test with:"
 echo "  ./test-phase3.sh"
