@@ -71,3 +71,9 @@ vendor/
 # Mac and Misc
 .DS_Store
 Thumbs.db
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/*.sh
+*.tfstate
+*.tfstate.backup
